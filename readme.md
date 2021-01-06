@@ -48,24 +48,6 @@ optional arguments:
   --epoch EPOCH         The number of epochs
   --batch_size BATCH_SIZE
                         The size of batch
-  --test                Only Test
-  --dropout_rate DROPOUT_RATE
-  --dropconnect_rate DROPCONNECT_RATE
-  --optim {adam,rmsprop}
-  --lr LR               Base learning rate when train batch size is 256.
-  --beta [BETA [BETA ...]]
-  --momentum MOMENTUM
-  --eps EPS
-  --decay DECAY  -h, --help            show this help message and exit
-  --save_dir SAVE_DIR   Directory name to save the model
-  --root ROOT           The Directory of data path.
-  --gpus GPUS           Select GPU Numbers | 0,1,2,3 |
-  --num_workers NUM_WORKERS
-                        Select CPU Number workers
-  --model {b0}          The type of Efficient net.
-  --epoch EPOCH         The number of epochs
-  --batch_size BATCH_SIZE
-                        The size of batch
   --val_batch_size VAL_BATCH_SIZE
                         The size of batch in val set
   --test                Only Test
@@ -84,6 +66,7 @@ optional arguments:
   --decay DECAY
   --scheduler {exp,cosine,none}
                         Learning rate scheduler type
+
 
 ```
 
