@@ -142,4 +142,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+test_scheduler.py
 ################################################################
