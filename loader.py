@@ -1,11 +1,3 @@
-'''
-Author: Di Li
-Date: 2020-09-29 20:19:35
-LastEditTime: 2020-11-07 21:52:09
-LastEditors: Di Li
-Description: 
-FilePath: \EfficientNets_ddl_apex\loader.py
-'''
 import torch
 
 from torch.utils.data import DataLoader

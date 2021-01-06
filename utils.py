@@ -1,12 +1,3 @@
-'''
-Author: Di Li
-Date: 2020-10-26 18:50:02
-LastEditTime: 2020-11-06 21:42:29
-LastEditors: Di Li
-Description: 
-FilePath: \EfficientNets_ddl_apex\utils.py
-'''
-
 """ Exponential Moving Average (EMA) of model updates
 Hacked together by / Copyright 2020 Ross Wightman
 """
