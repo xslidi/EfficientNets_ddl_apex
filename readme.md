@@ -83,7 +83,6 @@ optional arguments:
 
 ### TODO
 
- - Hyper Parameter / Imagenet Transformation Check
  - Implementation of Resolution Change
  - Clean up logging
 
