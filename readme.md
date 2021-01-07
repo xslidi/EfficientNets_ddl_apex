@@ -18,6 +18,14 @@ This repo not contains baseline network search(Mnas-Net) and compound coefficien
 
 This can be trained in imagenet from scratch.
 
+## Retrained performance
+
+
+Details about the models' performance retrained on ImageNet are below:
+
+|    *Name*         |*# Params*|*Top-1 Acc.*|*Top-5 Acc.*|
+|:-----------------:|:--------:|:----------:|:----------:|
+| `efficientnet-b0` |   5.3M   |    76.5    |    93.1    |
 
 
 ## How to use:
