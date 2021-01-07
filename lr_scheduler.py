@@ -1,11 +1,3 @@
-'''
-Author: Di Li
-Date: 2020-11-06 21:45:25
-LastEditTime: 2020-11-07 17:09:03
-LastEditors: Di Li
-Description: 
-FilePath: \EfficientNets_ddl_apex\lr_scheduler.py
-'''
 import types
 import math
 from torch._six import inf

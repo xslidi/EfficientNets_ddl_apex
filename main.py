@@ -100,6 +100,7 @@ def main(rank, world_size, arg):
     setup(rank, world_size)
     print(rank)
 
+    scaled_lr = arg.lr * arg.batch_size / 256
     arg.batch_size = int(arg.batch_size / world_size)
     arg.num_workers = int(arg.num_workers / world_size)
     
@@ -110,11 +111,9 @@ def main(rank, world_size, arg):
     net.to(rank)
     net = nn.parallel.DistributedDataParallel(net, device_ids=[rank])
     
-    
     # net = nn.DataParallel(net).to(torch_device)
     loss = nn.CrossEntropyLoss()
-
-    scaled_lr = arg.lr * arg.batch_size / 256
+    
     optim = {
         # "adam" : lambda : torch.optim.Adam(net.parameters(), lr=arg.lr, betas=arg.beta, weight_decay=arg.decay),
         "rmsproptf": lambda : RMSpropTF(net.parameters(), lr=scaled_lr, momentum=arg.momentum, eps=arg.eps, weight_decay=arg.decay),
