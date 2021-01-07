@@ -125,5 +125,10 @@ class EfficientNet(nn.Module):
 if __name__ == "__main__":
     print("Efficient B0 Summary")
     net = EfficientNet(1, 1)
-    from torchsummary import summary
-    summary(net.cuda(), (3, 224, 224))
+    for k, v in net.named_parameters():
+        print(k)
+    print("----------------------------------------")
+    for k, ema_v in net.state_dict().items():
+        print(k)
+    # from torchsummary import summary
+    # summary(net.cuda(), (3, 224, 224))

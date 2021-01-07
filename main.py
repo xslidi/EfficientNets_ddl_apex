@@ -11,7 +11,7 @@ from optim import RMSpropTF
 from lr_scheduler import StepLR
 
 
-from effnet import EfficientNet
+from models.effnet import EfficientNet
 from runner import Runner
 from loader import get_loaders
 
