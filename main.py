@@ -61,6 +61,7 @@ def arg_parse():
 
     parser.add_argument('--scheduler', type=str, default='exp', choices=["exp", "cosine", "none"],
                         help="Learning rate scheduler type")
+    parser.add_argument('--amp', action="store_true", help='Use Native Torch AMP mixed precision')                        
 
     return parser.parse_args()
 

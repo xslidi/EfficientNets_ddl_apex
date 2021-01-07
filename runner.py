@@ -126,26 +126,30 @@ class Runner():
             epoch_start = time.time()
             start_time = time.time()
 
-            scaler = torch.cuda.amp.GradScaler()
+            if self.arg.amp:
+                scaler = torch.cuda.amp.GradScaler()
 
             for i, (input_, target_) in enumerate(train_loader):
                 target_ = target_.to(self.rank, non_blocking=True)
-
-                # out = self.net(input_)
-                # loss = self.loss(out, target_)
-
-                self.optim.zero_grad()
-                with torch.cuda.amp.autocast():
-                    out = self.net(input_)
-                    loss = self.loss(out, target_)
                 
-                scaler.scale(loss).backward()
-                scaler.step(self.optim)
-                # loss.backward()                
-                # self.optim.step()
+                self.optim.zero_grad()
+                if self.arg.amp:
+                    with torch.cuda.amp.autocast():
+                        out = self.net(input_)
+                        loss = self.loss(out, target_)
+
+                    scaler.scale(loss).backward()
+                    scaler.step(self.optim)
+                    scaler.update()                
+                else:
+                    out = self.net(input_)
+                    loss = self.loss(out, target_)                    
+                    loss.backward()                
+                    self.optim.step()
+
                 if self.scheduler:
                     self.scheduler.step()
-                scaler.update()
+                
                 self.update_ema()
 
 

@@ -40,7 +40,7 @@ usage: main.py [-h] --save_dir SAVE_DIR [--root ROOT] [--gpus GPUS]
                [--dropconnect_rate DROPCONNECT_RATE]
                [--optim {rmsprop,rmsproptf}] [--lr LR] [--warmup WARMUP]
                [--beta [BETA [BETA ...]]] [--momentum MOMENTUM] [--eps EPS]
-               [--decay DECAY] [--scheduler {exp,cosine,none}]
+               [--decay DECAY] [--scheduler {exp,cosine,none}] [--amp]
 
 
 Pytorch EfficientNet
@@ -74,6 +74,7 @@ optional arguments:
   --decay DECAY
   --scheduler {exp,cosine,none}
                         Learning rate scheduler type
+  --amp                 Use Native Torch AMP mixed precision
 
 
 ```
