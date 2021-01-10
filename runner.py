@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 from utils import *
 
 IAGENET_IMAGES_NUM_TEST = 50000
-IAGENET_IMAGES_NUM_TRAIN = 1281167
+IAGENET_IMAGES_NUM_TRAIN = 1281166
 
 class Runner():
     def __init__(self, arg, net, optim, rank, loss, logger, scheduler=None):
@@ -115,11 +115,12 @@ class Runner():
 
 
 
-    def train(self, train_loader, trainsampler=None, val_loader=None):
-        print("\nStart Train len :", len(train_loader.dataset))        
-        self.net.train()
+    def train(self, train_loader, val_loader=None, trainsampler=None):
+        
         train_num = IAGENET_IMAGES_NUM_TRAIN if self.arg.dali else len(train_loader.dataset)
-
+        print("\nStart Train len :", train_num)        
+        self.net.train()
+    
         for epoch in range(self.start_epoch, self.arg.epoch):
             self.net.train()
             if trainsampler:

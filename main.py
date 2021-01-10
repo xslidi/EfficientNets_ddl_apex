@@ -112,7 +112,7 @@ def main(rank, world_size, arg):
     net.to(rank)
     net = nn.parallel.DistributedDataParallel(net, device_ids=[rank])
     
-    if arg.dali:
+    if not arg.dali:
         train_loader, val_loader, train_sampler = get_loaders(arg.root, arg.batch_size, res, arg.num_workers, arg.val_batch_size)
     else:
         train_loader, val_loader = get_loaders_dali(arg.root, arg.batch_size, res, rank, world_size, arg.num_workers)
@@ -130,7 +130,7 @@ def main(rank, world_size, arg):
 
     model = Runner(arg, net, optim, rank, loss, logger, scheduler)
     if arg.test is False:
-        if arg.dali:
+        if not arg.dali:
             model.train(train_loader, train_sampler, val_loader)
         else:
             model.train(train_loader, val_loader)
