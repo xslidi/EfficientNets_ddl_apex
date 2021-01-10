@@ -131,7 +131,7 @@ def main(rank, world_size, arg):
     model = Runner(arg, net, optim, rank, loss, logger, scheduler)
     if arg.test is False:
         if not arg.dali:
-            model.train(train_loader, train_sampler, val_loader)
+            model.train(train_loader, val_loader, train_sampler)
         else:
             model.train(train_loader, val_loader)
         cleanup()
