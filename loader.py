@@ -1,12 +1,13 @@
 import torch
 import numpy as np
+import PIL
 
 from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
 from utils import ToNumpy
-# from base import DALIDataloader
-# from imagenet import HybridTrainPipe, HybridValPipe
+from datasets.base import DALIDataloader
+from datasets.imagenet import HybridTrainPipe, HybridValPipe
 
 IMAGENET_IMAGES_NUM_TRAIN = 1281166
 # IMAGENET_IMAGES_NUM_TRAIN = 50000
@@ -117,26 +118,25 @@ def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200
 
     if not prefetch:
         transform_train = transforms.Compose([
-                transforms.Resize([resolution, resolution]),
-                transforms.RandomResizedCrop(resolution),
+                transforms.RandomResizedCrop(resolution, interpolation=PIL.Image.BICUBIC),
                 transforms.RandomHorizontalFlip(),
                 transforms.ToTensor(),
                 normalize,
             ])
         transform_eval = transforms.Compose([
-            transforms.Resize([resolution, resolution]),
+            transforms.Resize([resolution, resolution], interpolation=PIL.Image.BICUBIC),
             transforms.ToTensor(),
             normalize,
             ])
     else:
         transform_train = transforms.Compose([
                 transforms.Resize([resolution, resolution]),
-                transforms.RandomResizedCrop(resolution),
+                transforms.RandomResizedCrop(resolution, interpolation=PIL.Image.BICUBIC),
                 transforms.RandomHorizontalFlip(),
                 ToNumpy(),
             ])
         transform_eval = transforms.Compose([
-            transforms.Resize([resolution, resolution]),
+            transforms.Resize([resolution, resolution], interpolation=PIL.Image.BICUBIC),
             ToNumpy(),
             ])        
 
@@ -172,16 +172,16 @@ def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200
 
 
 
-# def get_loaders(root, batch_size, resolution, device_id, world_size, num_workers=32):
+def get_loaders_dali(root, batch_size, resolution, device_id, world_size, num_workers=32):
 
-#     pip_train = HybridTrainPipe(batch_size=batch_size, num_threads=num_workers, device_id=device_id, data_dir=root+'/train', crop=resolution, world_size=world_size)
+    pip_train = HybridTrainPipe(batch_size=batch_size, num_threads=num_workers, device_id=device_id, data_dir=root+'/train', crop=resolution, world_size=world_size)
 
-#     pip_test = HybridValPipe(batch_size=batch_size, num_threads=num_workers, device_id=device_id, data_dir=root+'/val', crop=resolution, size=VAL_SIZE, world_size=1, local_rank=0)
+    pip_test = HybridValPipe(batch_size=batch_size, num_threads=num_workers, device_id=device_id, data_dir=root+'/val', crop=resolution, size=VAL_SIZE, world_size=1, local_rank=0)
 
-#     size = int(IMAGENET_IMAGES_NUM_TRAIN / world_size)
+    size = int(IMAGENET_IMAGES_NUM_TRAIN / world_size)
     
-#     train_loader = DALIDataloader(pipeline=pip_train, size=size, batch_size=batch_size, onehot_label=True)
+    train_loader = DALIDataloader(pipeline=pip_train, size=size, batch_size=batch_size, onehot_label=True)
 
-#     val_loader = DALIDataloader(pipeline=pip_test, size=IMAGENET_IMAGES_NUM_TEST, batch_size=batch_size, onehot_label=True)
+    val_loader = DALIDataloader(pipeline=pip_test, size=IMAGENET_IMAGES_NUM_TEST, batch_size=batch_size, onehot_label=True)
 
-#     return train_loader, val_loader
+    return train_loader, val_loader

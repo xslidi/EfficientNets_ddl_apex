@@ -5,7 +5,7 @@ import torch
 import pickle
 import numpy as np
 import nvidia.dali.ops as ops
-from base import DALIDataloader
+from datasets.base import DALIDataloader
 from torchvision import datasets
 from sklearn.utils import shuffle
 import nvidia.dali.types as types

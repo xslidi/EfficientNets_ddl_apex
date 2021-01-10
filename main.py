@@ -13,7 +13,7 @@ from lr_scheduler import StepLR
 
 from models.effnet import EfficientNet
 from runner import Runner
-from loader import get_loaders
+from loader import get_loaders, get_loaders_dali
 
 
 from logger import Logger
@@ -34,7 +34,7 @@ def arg_parse():
                         help="Select CPU Number workers")
 
     parser.add_argument('--model', type=str, default='b0',
-                        choices=["b0"],
+                        choices=["b0", "b1"],
                         help='The type of Efficient net.')
     
     parser.add_argument('--epoch', type=int, default=350, help='The number of epochs')
@@ -62,13 +62,16 @@ def arg_parse():
     parser.add_argument('--scheduler', type=str, default='exp', choices=["exp", "cosine", "none"],
                         help="Learning rate scheduler type")
     parser.add_argument('--amp', action="store_true", help='Use Native Torch AMP mixed precision')                        
-
+    parser.add_argument('--dali', action="store_true", help='Use Naidiv DaLi library for loading') 
+    
     return parser.parse_args()
 
 
 def get_model(arg, classes=1000):
     if arg.model == "b0":
-        return EfficientNet(1, 1, num_classes=classes)
+        return EfficientNet(1, 1, num_classes=classes), 224
+    elif arg.model == "b1":
+        return EfficientNet(1, 1.1, num_classes=classes), 240
 
 
 def get_scheduler(optim, sche_type, step_size, t_max, warmup_t=0):
@@ -104,13 +107,15 @@ def main(rank, world_size, arg):
     scaled_lr = arg.lr * arg.batch_size / 256
     arg.batch_size = int(arg.batch_size / world_size)
     arg.num_workers = int(arg.num_workers / world_size)
-    
-    train_loader, val_loader, train_sampler = get_loaders(arg.root, arg.batch_size, 224, arg.num_workers, arg.val_batch_size)
-    # train_loader, val_loader = get_loaders(arg.root, arg.batch_size, 224, rank, world_size, arg.num_workers)
 
-    net = get_model(arg, classes=1000) 
+    net, res = get_model(arg, classes=1000) 
     net.to(rank)
     net = nn.parallel.DistributedDataParallel(net, device_ids=[rank])
+    
+    if arg.dali:
+        train_loader, val_loader, train_sampler = get_loaders(arg.root, arg.batch_size, res, arg.num_workers, arg.val_batch_size)
+    else:
+        train_loader, val_loader = get_loaders_dali(arg.root, arg.batch_size, res, rank, world_size, arg.num_workers)
     
     # net = nn.DataParallel(net).to(torch_device)
     loss = nn.CrossEntropyLoss()
@@ -125,8 +130,10 @@ def main(rank, world_size, arg):
 
     model = Runner(arg, net, optim, rank, loss, logger, scheduler)
     if arg.test is False:
-        model.train(train_loader, train_sampler, val_loader)
-        # model.train(train_loader, val_loader)
+        if arg.dali:
+            model.train(train_loader, train_sampler, val_loader)
+        else:
+            model.train(train_loader, val_loader)
         cleanup()
     model.test(train_loader, val_loader)
     

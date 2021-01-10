@@ -13,7 +13,7 @@ from torch.utils.tensorboard import SummaryWriter
 from utils import *
 
 IAGENET_IMAGES_NUM_TEST = 50000
-
+IAGENET_IMAGES_NUM_TRAIN = 1281167
 
 class Runner():
     def __init__(self, arg, net, optim, rank, loss, logger, scheduler=None):
@@ -115,13 +115,15 @@ class Runner():
 
 
 
-    def train(self, train_loader, trainsampler, val_loader=None):
+    def train(self, train_loader, trainsampler=None, val_loader=None):
         print("\nStart Train len :", len(train_loader.dataset))        
         self.net.train()
+        train_num = IAGENET_IMAGES_NUM_TRAIN if self.arg.dali else len(train_loader.dataset)
 
         for epoch in range(self.start_epoch, self.arg.epoch):
             self.net.train()
-            trainsampler.set_epoch(epoch)
+            if trainsampler:
+                trainsampler.set_epoch(epoch)
             
             epoch_start = time.time()
             start_time = time.time()
@@ -158,7 +160,7 @@ class Runner():
                     if self.rank == 0:
                         lr = self.optim.param_groups[0]['lr']
                         self.logger.log_write("train", epoch=epoch, loss=loss.item(), time=duration, lr=lr)
-                        self.writter.add_scalar('train_loss', loss, epoch*len(train_loader.dataset)//self.arg.batch_size + i)
+                        self.writter.add_scalar('train_loss', loss, epoch*train_num//self.arg.batch_size + i)
                     start_time = time.time()
                 
             if (val_loader is not None) and self.rank == 0:
@@ -170,7 +172,7 @@ class Runner():
 
 
     def _get_acc(self, loader, ema=True):
-        # correct = 0
+        total_num = IAGENET_IMAGES_NUM_TEST if self.arg.dali else len(loader.dataset)
         acc1, acc5, loss = 0, 0, 0
         if not ema:
             self.net.eval()
@@ -195,9 +197,9 @@ class Runner():
                 loss += loss
                 
 
-        acc1 /= len(loader.dataset)
-        acc5 /= len(loader.dataset)
-        loss = loss.item() / len(loader.dataset) * self.arg.batch_size
+        acc1 /= total_num
+        acc5 /= total_num
+        loss = loss.item() / total_num * self.arg.batch_size
         acc1 = acc1.item()
         acc5 = acc5.item()
 
