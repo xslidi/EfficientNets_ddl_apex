@@ -16,6 +16,8 @@ IMAGENET_MEAN = [0.49139968, 0.48215827, 0.44653124]
 IMAGENET_STD = [0.24703233, 0.24348505, 0.26158768]
 IMAGENET_IMAGES_NUM_TRAIN = 1281167
 IMAGENET_IMAGES_NUM_TEST = 50000
+device_memory_padding = 211025920
+host_memory_padding = 140544512
 IMG_DIR = '/gdata/ImageNet2012'
 TRAIN_BS = 256
 TEST_BS = 200
@@ -28,7 +30,9 @@ class HybridTrainPipe(Pipeline):
         super(HybridTrainPipe, self).__init__(batch_size, num_threads, device_id, seed=12 + device_id)
         dali_device = "gpu"
         self.input = ops.FileReader(file_root=data_dir, shard_id=device_id, num_shards=world_size, random_shuffle=True)
-        self.decode = ops.ImageDecoder(device="mixed", output_type=types.RGB)
+        self.decode = ops.ImageDecoder(device="mixed", output_type=types.RGB,                                                 
+                                                 device_memory_padding=device_memory_padding,
+                                                 host_memory_padding=host_memory_padding)
         self.res = ops.RandomResizedCrop(device="gpu", size=crop, random_area=[0.08, 1.25])
         self.cmnp = ops.CropMirrorNormalize(device="gpu",
                                             dtype=types.FLOAT,
