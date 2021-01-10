@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import PIL
+import math
 
 from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
@@ -115,6 +116,7 @@ def fast_collate(batch):
 def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200, prefetch=False):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
+    scale_size = int(math.floor(resolution / 0.85))
 
     if not prefetch:
         transform_train = transforms.Compose([
@@ -124,7 +126,8 @@ def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200
                 normalize,
             ])
         transform_eval = transforms.Compose([
-            transforms.Resize([resolution, resolution], interpolation=PIL.Image.BICUBIC),
+            transforms.Resize([scale_size, scale_size], interpolation=PIL.Image.BICUBIC),
+            transforms.CenterCrop(resolution),
             transforms.ToTensor(),
             normalize,
             ])
@@ -136,7 +139,8 @@ def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200
                 ToNumpy(),
             ])
         transform_eval = transforms.Compose([
-            transforms.Resize([resolution, resolution], interpolation=PIL.Image.BICUBIC),
+            transforms.Resize([scale_size, scale_size], interpolation=PIL.Image.BICUBIC),
+            transforms.CenterCrop(resolution),
             ToNumpy(),
             ])        
 
