@@ -6,7 +6,7 @@ import math
 from torch.utils.data import DataLoader
 from torchvision.datasets import ImageFolder
 from torchvision import transforms
-from utils import ToNumpy
+from utils import ToNumpy, Lighting
 from datasets.base import DALIDataloader
 from datasets.imagenet import HybridTrainPipe, HybridValPipe
 
@@ -16,7 +16,13 @@ IMAGENET_IMAGES_NUM_TEST = 50000
 VAL_SIZE = 256
 IMAGENET_DEFAULT_MEAN = (0.485, 0.456, 0.406)
 IMAGENET_DEFAULT_STD = (0.229, 0.224, 0.225) 
-
+IMAGENET_PCA = {
+    'eigval': torch.Tensor([0.2175, 0.0188, 0.0045]),
+    'eigvec': torch.Tensor([
+        [-0.5675,  0.7192,  0.4009],
+        [-0.5808, -0.0045, -0.8140],
+        [-0.5836, -0.6948,  0.4203],
+    ])}
 
 class PrefetchLoader:
 
@@ -113,36 +119,34 @@ def fast_collate(batch):
     else:
         assert False
 
-def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200, prefetch=False):
+def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200, prefetch=False, color_jitter=0.4, pca=False, crop_pct=0.875):
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-    scale_size = int(math.floor(resolution / 0.85))
+    scale_size = int(math.floor(resolution / crop_pct))
+
+    transform_train = []
+    transform_eval = []
+
+    transform_train += [transforms.RandomResizedCrop(resolution, interpolation=PIL.Image.BICUBIC),
+                        transforms.RandomHorizontalFlip(),
+                        transforms.ColorJitter(*(color_jitter,color_jitter,color_jitter)),]
+
+    transform_eval += [transforms.Resize([scale_size, scale_size], interpolation=PIL.Image.BICUBIC),
+                       transforms.CenterCrop(resolution),]
 
     if not prefetch:
-        transform_train = transforms.Compose([
-                transforms.RandomResizedCrop(resolution, interpolation=PIL.Image.BICUBIC),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                normalize,
-            ])
-        transform_eval = transforms.Compose([
-            transforms.Resize([scale_size, scale_size], interpolation=PIL.Image.BICUBIC),
-            transforms.CenterCrop(resolution),
-            transforms.ToTensor(),
-            normalize,
-            ])
+        transform_train += [transforms.ToTensor()]
+        if pca:
+            transform_train += [Lighting(0.1, ImageNet_PCA['eigval'], ImageNet_PCA['eigvec'])]            
+        transform_train += [normalize,]
+        transform_eval += [transforms.ToTensor(),
+                            normalize,]
     else:
-        transform_train = transforms.Compose([
-                transforms.Resize([resolution, resolution]),
-                transforms.RandomResizedCrop(resolution, interpolation=PIL.Image.BICUBIC),
-                transforms.RandomHorizontalFlip(),
-                ToNumpy(),
-            ])
-        transform_eval = transforms.Compose([
-            transforms.Resize([scale_size, scale_size], interpolation=PIL.Image.BICUBIC),
-            transforms.CenterCrop(resolution),
-            ToNumpy(),
-            ])        
+        transform_train += [ToNumpy()]
+        transform_eval += [ToNumpy()]  
+
+    transform_train = transforms.Compose(transform_train)
+    transform_eval = transforms.Compose(transform_eval)         
 
     train_dataset = ImageFolder(
         root + "/train",
