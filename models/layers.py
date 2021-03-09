@@ -4,24 +4,28 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+class Swish(nn.Module):
+    def forward(self, x, inplace=True):
+        return x * torch.sigmoid(x)
+
 
 def conv_bn_act(in_, out_, kernel_size,
                 stride=1, groups=1, bias=True,
-                eps=1e-3, momentum=0.01):
+                eps=1e-3, momentum=0.01, act_layer=Swish):
     return nn.Sequential(
         SamePadConv2d(in_, out_, kernel_size, stride, groups=groups, bias=bias),
         nn.BatchNorm2d(out_, eps, momentum),
-        Swish()
+        act_layer(inplace=True)
     )
 
-def conv_bn_relu(in_, out_, kernel_size,
-                stride=1, groups=1, bias=True,
-                eps=1e-5, momentum=0.01):
-    return nn.Sequential(
-        SamePadConv2d(in_, out_, kernel_size, stride, groups=groups, bias=bias),
-        nn.BatchNorm2d(out_, eps, momentum),
-        nn.ReLU(inplace=True)
-    )                
+# def conv_bn_relu(in_, out_, kernel_size,
+#                 stride=1, groups=1, bias=True,
+#                 eps=1e-5, momentum=0.01):
+#     return nn.Sequential(
+#         SamePadConv2d(in_, out_, kernel_size, stride, groups=groups, bias=bias),
+#         nn.BatchNorm2d(out_, eps, momentum),
+#         nn.ReLU(inplace=True)
+#     )                
 
 
 class SamePadConv2d(nn.Conv2d):
@@ -52,16 +56,9 @@ class SamePadConv2d(nn.Conv2d):
                         padding=(padding_rows // 2, padding_cols // 2),
                         dilation=self.dilation, groups=self.groups)
 
-
-class Swish(nn.Module):
-    def forward(self, x):
-        return x * torch.sigmoid(x)
-
-
 class Flatten(nn.Module):
     def forward(self, x):
         return x.view(x.shape[0], -1)
-
 
 class SEModule(nn.Module):
     def __init__(self, in_, squeeze_ch):
@@ -75,7 +72,6 @@ class SEModule(nn.Module):
 
     def forward(self, x):
         return x * torch.sigmoid(self.se(x))
-
 
 class DropConnect(nn.Module):
     def __init__(self, ratio):
