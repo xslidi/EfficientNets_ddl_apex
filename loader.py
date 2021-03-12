@@ -137,7 +137,7 @@ def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200
     if not prefetch:
         transform_train += [transforms.ToTensor()]
         if pca:
-            transform_train += [Lighting(0.1, ImageNet_PCA['eigval'], ImageNet_PCA['eigvec'])]            
+            transform_train += [Lighting(0.1, IMAGENET_PCA['eigval'], IMAGENET_PCA['eigvec'])]            
         transform_train += [normalize,]
         transform_eval += [transforms.ToTensor(),
                             normalize,]
