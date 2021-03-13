@@ -20,7 +20,7 @@ LOG_KEYS = {
 # can multiple datas
 LOG_VALUES = {
     "train":["loss", "time", "lr"],
-    "valid":["acc","valid_acc", "time", "acc5", "loss"],
+    "valid":["acc","valid_acc", "time", "acc5", "loss", "epoch_time"],
     "test": ["train_acc", "valid_acc"]
 }
 

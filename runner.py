@@ -25,12 +25,13 @@ class Runner():
         self.rank = rank
 
         self.net = net
-        self.ema = copy.deepcopy(net.module).cpu()
-        self.ema.eval()
-        self.ema_has_module = hasattr(self.ema, 'module')
-        for p in self.ema.parameters():
-            p.requires_grad_(False)
-        self.ema_decay = arg.ema_decay
+        if self.arg.ema:
+            self.ema = copy.deepcopy(net.module).cpu()
+            self.ema.eval()
+            self.ema_has_module = hasattr(self.ema, 'module')
+            for p in self.ema.parameters():
+                p.requires_grad_(False)
+            self.ema_decay = arg.ema_decay
 
         self.loss = loss
         self.optim = optim
@@ -58,15 +59,24 @@ class Runner():
             epoch : current epoch
             filename : model save file name
         """
+        if self.arg.ema:
+            torch.save({"model_type": self.arg.model,
+                        "start_epoch": epoch + 1,
+                        "network": self.net.module.state_dict(),
+                        "ema": self.ema.state_dict(),
+                        "optimizer": self.optim.state_dict(),
+                        "best_metric": self.best_metric,
+                        "scheduler": self.scheduler.state_dict()
+                        }, self.save_dir + "/%s.pth.tar" % (filename))
+        else:
+            torch.save({"model_type": self.arg.model,
+                        "start_epoch": epoch + 1,
+                        "network": self.net.module.state_dict(),
+                        "optimizer": self.optim.state_dict(),
+                        "best_metric": self.best_metric,
+                        "scheduler": self.scheduler.state_dict()
+                        }, self.save_dir + "/%s.pth.tar" % (filename))
 
-        torch.save({"model_type": self.arg.model,
-                    "start_epoch": epoch + 1,
-                    "network": self.net.module.state_dict(),
-                    "ema": self.ema.state_dict(),
-                    "optimizer": self.optim.state_dict(),
-                    "best_metric": self.best_metric,
-                    "scheduler": self.scheduler.state_dict()
-                    }, self.save_dir + "/%s.pth.tar" % (filename))
         print("Model saved %d epoch" % (epoch))
 
     def load(self, filename=""):
@@ -91,7 +101,8 @@ class Runner():
                                  (ckpoint["model_type"]))
 
             self.net.module.load_state_dict(ckpoint['network'])
-            self.ema.load_state_dict(ckpoint['ema'])
+            if self.arg.ema:
+                self.ema.load_state_dict(ckpoint['ema'])
             self.optim.load_state_dict(ckpoint['optimizer'])
             self.start_epoch = ckpoint['start_epoch']
             self.best_metric = ckpoint["best_metric"]
@@ -153,7 +164,8 @@ class Runner():
                 if self.scheduler:
                     self.scheduler.step()
                 
-                self.update_ema()
+                if self.arg.ema:
+                    self.update_ema()
 
 
                 if (i % self.arg.print_freq) == 0:
@@ -165,10 +177,11 @@ class Runner():
                     start_time = time.time()
                 
             if (val_loader is not None) and self.rank == 0:
-                self.valid(epoch, val_loader)
+                self.valid(epoch, val_loader, self.arg.ema)
             
             epoch_time = time.time() - epoch_start
             print('epoch_time: %.4f' % (epoch_time))
+            self.logger.log_write("valid", epoch_time=epoch_time)
         self.writter.close()
 
 
@@ -203,8 +216,8 @@ class Runner():
         loss = loss.item() / total_num * self.arg.batch_size
         acc1 = acc1.item()
         acc5 = acc5.item()
-
-        self.ema.to('cpu')
+        if ema:
+            self.ema.to('cpu')
         # return correct / IAGENET_IMAGES_NUM_TEST
         return acc1, acc5, loss
 
