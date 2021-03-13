@@ -61,12 +61,12 @@ class Flatten(nn.Module):
         return x.view(x.shape[0], -1)
 
 class SEModule(nn.Module):
-    def __init__(self, in_, squeeze_ch):
+    def __init__(self, in_, squeeze_ch, act_layer=nn.SiLU):
         super().__init__()
         self.se = nn.Sequential(
             nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(in_, squeeze_ch, kernel_size=1, stride=1, padding=0, bias=True),
-            Swish(),
+            act_layer(inplace=True),
             nn.Conv2d(squeeze_ch, in_, kernel_size=1, stride=1, padding=0, bias=True),
         )
 
