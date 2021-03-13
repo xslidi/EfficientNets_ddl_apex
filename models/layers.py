@@ -4,9 +4,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-class Swish(nn.Module):
-    def forward(self, x, inplace=True):
-        return x * torch.sigmoid(x)
+# class Swish(nn.Module):
+#     def forward(self, x):
+#         return x * torch.sigmoid(x)
 
 
 def conv_bn_act(in_, out_, kernel_size,
