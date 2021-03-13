@@ -11,7 +11,7 @@ class Swish(nn.Module):
 
 def conv_bn_act(in_, out_, kernel_size,
                 stride=1, groups=1, bias=True,
-                eps=1e-3, momentum=0.01, act_layer=Swish):
+                eps=1e-3, momentum=0.01, act_layer=nn.SiLU):
     return nn.Sequential(
         SamePadConv2d(in_, out_, kernel_size, stride, groups=groups, bias=bias),
         nn.BatchNorm2d(out_, eps, momentum),
