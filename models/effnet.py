@@ -35,10 +35,10 @@ class MBConv(nn.Module):
         self.skip = skip and (stride == 1) and (in_ == out_)
 
         # DropConnect
-        # self.dropconnect = DropConnect(dc_ratio) if dc_ratio > 0 else nn.Identity()
+        self.dropconnect = DropConnect(dc_ratio) if dc_ratio > 0 else nn.Identity()
         # Original TF Repo not using drop_rate
         # https://github.com/tensorflow/tpu/blob/05f7b15cdf0ae36bac84beb4aef0a09983ce8f66/models/official/efficientnet/efficientnet_model.py#L408
-        self.dropconnect = nn.Identity()
+        # self.dropconnect = nn.Identity()
 
     def forward(self, inputs):
         expand = self.expand_conv(inputs)
