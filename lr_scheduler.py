@@ -256,11 +256,12 @@ class CosineAnnealingLR(_LRScheduler):
         https://arxiv.org/abs/1608.03983
     """
 
-    def __init__(self, optimizer, T_max, eta_min=0, last_epoch=-1, verbose=False, warmup_t=0, warmup_lr_init=0):
+    def __init__(self, optimizer, T_max, eta_min=0, last_epoch=-1, verbose=False, warmup_t=0, warmup_lr_init=0, step_size=1):
         self.T_max = T_max
         self.eta_min = eta_min
         self.warmup_t = warmup_t
         self.warmup_lr_init = warmup_lr_init
+        self.step_size = step_size
         super(CosineAnnealingLR, self).__init__(optimizer, last_epoch, verbose)
 
     def get_lr(self):
@@ -268,12 +269,19 @@ class CosineAnnealingLR(_LRScheduler):
             warnings.warn("To get the last learning rate computed by the scheduler, "
                           "please use `get_last_lr()`.", UserWarning)
         if self.last_epoch < self.warmup_t:
-            return [self.warmup_lr_init + (base_lr - self.warmup_lr_init) * self.last_epoch / self.warmup_t for base_lr in self.base_lrs] 
+            if self.last_epoch == 0:
+                return [self.warmup_lr_init for base_lr in self.base_lrs]
+            elif (self.last_epoch % self.step_size != 0):
+                return [group['lr'] for group in self.optimizer.param_groups]
+            else:
+                return [self.warmup_lr_init + (base_lr - self.warmup_lr_init) * self.last_epoch / self.warmup_t for base_lr in self.base_lrs] 
+
+            # return [self.warmup_lr_init + (base_lr - self.warmup_lr_init) * self.last_epoch / self.warmup_t for base_lr in self.base_lrs] 
         elif self.last_epoch == self.warmup_t:
             return [base_lr for base_lr in self.base_lrs] 
             
-        if self.last_epoch == 0:
-            return self.base_lrs
+        # if self.last_epoch == 0:
+        #     return self.base_lrs
         elif (self.last_epoch - 1 - self.T_max) % (2 * self.T_max) == 0:
             return [group['lr'] + (base_lr - self.eta_min) *
                     (1 - math.cos(math.pi / self.T_max)) / 2
