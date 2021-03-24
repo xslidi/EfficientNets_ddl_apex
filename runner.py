@@ -128,8 +128,10 @@ class Runner():
 
     def train(self, train_loader, val_loader=None, trainsampler=None):
         
+        # print("Model:\n{}".format(self.net))
         train_num = IAGENET_IMAGES_NUM_TRAIN if self.arg.dali else len(train_loader.dataset)
-        print("\nStart Train len :", train_num)        
+        print("\nStart Train len :", train_num) 
+        all_iters = len(train_loader.dataset) // (self.arg.batch_size)                
         self.net.train()
     
         for epoch in range(self.start_epoch, self.arg.epoch):
@@ -172,7 +174,7 @@ class Runner():
                     duration = time.time() - start_time
                     if self.rank == 0:
                         lr = self.optim.param_groups[0]['lr']
-                        self.logger.log_write("train", epoch=epoch, loss=loss.item(), time=duration, lr=lr)
+                        self.logger.log_write("train", epoch=epoch, iters=str(i) + "/" + str(all_iters), loss=loss.item(), time=duration, lr=lr)
                         self.writter.add_scalar('train_loss', loss, epoch*train_num//self.arg.batch_size + i)
                     start_time = time.time()
                 
