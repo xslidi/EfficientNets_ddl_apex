@@ -131,7 +131,7 @@ class Runner():
         # print("Model:\n{}".format(self.net))
         train_num = IAGENET_IMAGES_NUM_TRAIN if self.arg.dali else len(train_loader.dataset)
         print("\nStart Train len :", train_num) 
-        all_iters = len(train_loader.dataset) // (self.arg.batch_size)                
+        all_iters = train_num // (self.arg.batch_size)                
         self.net.train()
     
         for epoch in range(self.start_epoch, self.arg.epoch):
@@ -239,11 +239,11 @@ class Runner():
             save_time = time.time() - start
             print('save_time: %.4f s' % (save_time))
 
-    def test(self, train_loader, val_loader):
+    def test(self, train_loader, val_loader, ema=True):
         print("\n Start Test")
         self.load()
-        train_acc = self._get_acc(train_loader)
-        valid_acc = self._get_acc(val_loader)
+        train_acc = self._get_acc(train_loader, ema=True)
+        valid_acc = self._get_acc(val_loader, ema=True)
         self.logger.log_write("test", fname="test", train_acc=train_acc, valid_acc=valid_acc)
         return train_acc, valid_acc
     
