@@ -132,7 +132,7 @@ def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200
                         transforms.RandomHorizontalFlip(),
                         transforms.ColorJitter(*(color_jitter,color_jitter,color_jitter)),]
 
-    transform_eval += [transforms.Resize([scale_size, scale_size], interpolation=InterpolationMode.BICUBIC),
+    transform_eval += [transforms.Resize(scale_size, interpolation=InterpolationMode.BICUBIC),
                        transforms.CenterCrop(resolution),]  
 
     if not prefetch:
