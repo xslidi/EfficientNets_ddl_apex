@@ -215,7 +215,7 @@ class Runner():
 
         acc1 /= total_num
         acc5 /= total_num
-        loss = loss.item() / total_num
+        loss = loss.item() / total_num * self.arg.batch_size
         acc1 = acc1.item()
         acc5 = acc5.item()
         if ema:
