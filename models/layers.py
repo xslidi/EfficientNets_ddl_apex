@@ -1,4 +1,5 @@
 import math
+import numpy as np
 
 import torch
 import torch.nn as nn
@@ -77,10 +78,11 @@ class SEModule(nn.Module):
             nn.Conv2d(in_, squeeze_ch, kernel_size=1, stride=1, padding=0, bias=True),
             act_layer(inplace=True),
             nn.Conv2d(squeeze_ch, in_, kernel_size=1, stride=1, padding=0, bias=True),
+            nn.Sigmoid(),
         )
 
     def forward(self, x):
-        return x * torch.sigmoid(self.se(x))
+        return x * self.se(x)
 
 class DropConnect(nn.Module):
     def __init__(self, ratio):
