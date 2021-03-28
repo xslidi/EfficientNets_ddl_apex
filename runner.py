@@ -242,8 +242,8 @@ class Runner():
     def test(self, train_loader, val_loader, ema=True):
         print("\n Start Test")
         self.load()
-        train_acc = self._get_acc(train_loader, ema=True)
-        valid_acc = self._get_acc(val_loader, ema=True)
+        train_acc = self._get_acc(train_loader, ema=ema)
+        valid_acc = self._get_acc(val_loader, ema=ema)
         self.logger.log_write("test", fname="test", train_acc=train_acc, valid_acc=valid_acc)
         return train_acc, valid_acc
     
