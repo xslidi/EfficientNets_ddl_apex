@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.nn import Module
 from torch import nn
-from models.layers import SamePadConv2d, conv_bn_act, SEModule, conv2d, init_weights
+from models.layers import SamePadConv2d, conv_bn_act, SEModule, conv2d
 
 class Anyhead(Module):
     """AnyNet head: AvgPool, 1x1."""
