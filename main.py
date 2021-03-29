@@ -44,8 +44,9 @@ def arg_parse():
     parser.add_argument('--print_freq', type=int, default=50, help='The iterations of print results')
     parser.add_argument('--num_classes', type=int, default=1000, help='Number of classes') 
     parser.add_argument('--ema', action="store_true", help='Using exponential moving average for testing')
-    parser.add_argument('--color-jitter', type=float, default=0.0, help='Color jitter factor (default: 0.0)')     
-    parser.add_argument('--pca', action="store_true", help='add AlexNet - style PCA - based noise')  
+    parser.add_argument('--color_jitter', type=float, default=0.0, help='Color jitter factor (default: 0.0)')     
+    parser.add_argument('--pca', action="store_true", help='add AlexNet - style PCA - based noise') 
+    parser.add_argument('--crop_pct', default=0.875, type=float, help='Input image center crop percent (for validation only)') 
 
     # EfficientNet options
     parser.add_argument('--ema_decay', type=float, default=0.9999,
@@ -93,9 +94,9 @@ def overrider(arg, mfg):
 
 def get_model(arg, classes=1000):
     if arg.model == "b0":
-        return EfficientNet(1, 1, num_classes=classes), 224
+        return EfficientNet(1, 1, num_classes=classes, drop_connect_rate=arg.dropconnect_rate, dropout_rate=arg.dropout_rate), 224
     elif arg.model == "b1":
-        return EfficientNet(1, 1.1, num_classes=classes), 240
+        return EfficientNet(1, 1.1, num_classes=classes, drop_connect_rate=arg.dropconnect_rate, dropout_rate=arg.dropout_rate), 240
     elif arg.model == "regnet_02":
         mfg = dict(REGNET_W0=24, REGNET_WA=36.44, REGNET_WM=2.49, REGNET_GROUP_W=8, REGNET_DEPTH=13)
         arg = overrider(arg, mfg)
@@ -137,7 +138,7 @@ def main(rank, world_size, arg):
 
     scaled_lr = arg.lr * arg.batch_size / 256
     arg.batch_size = int(arg.batch_size / world_size)
-    arg.num_workers = int(arg.num_workers / world_size)
+    num_workers = int(arg.num_workers / world_size)
 
     net, res = get_model(arg, classes=arg.num_classes) 
     logger.will_write(str(arg) + "\n")
@@ -145,9 +146,9 @@ def main(rank, world_size, arg):
     net = nn.parallel.DistributedDataParallel(net, device_ids=[rank])
     
     if not arg.dali:
-        train_loader, val_loader, train_sampler = get_loaders(arg.root, arg.batch_size, res, arg.num_workers, arg.val_batch_size, color_jitter=arg.color_jitter, pca=arg.pca)
+        train_loader, val_loader, train_sampler = get_loaders(arg.root, arg.batch_size, res, num_workers, arg.val_batch_size, color_jitter=arg.color_jitter, pca=arg.pca, crop_pct=arg.crop_pct)
     else:
-        train_loader, val_loader = get_loaders_dali(arg.root, arg.batch_size, res, rank, world_size, arg.num_workers)
+        train_loader, val_loader = get_loaders_dali(arg.root, arg.batch_size, res, rank, world_size, num_workers)
     
     # net = nn.DataParallel(net).to(torch_device)
     loss = nn.CrossEntropyLoss()
