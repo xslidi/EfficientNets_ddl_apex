@@ -256,12 +256,13 @@ class CosineAnnealingLR(_LRScheduler):
         https://arxiv.org/abs/1608.03983
     """
 
-    def __init__(self, optimizer, T_max, eta_min=0, last_epoch=-1, verbose=False, warmup_t=0, warmup_lr_init=0, step_size=1):
+    def __init__(self, optimizer, T_max, eta_min=0, last_epoch=-1, verbose=False, warmup_t=0, warmup_lr_init=0, step_size=1, min_lr=1e-5):
         self.T_max = T_max
         self.eta_min = eta_min
         self.warmup_t = warmup_t
         self.warmup_lr_init = warmup_lr_init
         self.step_size = step_size
+        self.min_lr = min_lr
         super(CosineAnnealingLR, self).__init__(optimizer, last_epoch, verbose)
 
     def get_lr(self):
@@ -278,7 +279,9 @@ class CosineAnnealingLR(_LRScheduler):
 
             # return [self.warmup_lr_init + (base_lr - self.warmup_lr_init) * self.last_epoch / self.warmup_t for base_lr in self.base_lrs] 
         elif self.last_epoch == self.warmup_t:
-            return [base_lr for base_lr in self.base_lrs] 
+            return [base_lr for base_lr in self.base_lrs]
+        elif self.last_epoch > self.T_max:
+            return [self.min_lr for _ in self.base_lrs]
         elif self.last_epoch % self.step_size != 0:
             return [group['lr'] for group in self.optimizer.param_groups]
         elif (self.last_epoch - 1 - self.T_max) % (2 * self.T_max) == 0:

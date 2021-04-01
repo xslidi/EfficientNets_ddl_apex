@@ -47,6 +47,7 @@ def arg_parse():
     parser.add_argument('--color_jitter', type=float, default=0.0, help='Color jitter factor (default: 0.0)')     
     parser.add_argument('--pca', action="store_true", help='add AlexNet - style PCA - based noise') 
     parser.add_argument('--crop_pct', default=0.875, type=float, help='Input image center crop percent (for validation only)') 
+    parser.add_argument('--cool_down', type=int, default=0, help='epochs to cooldown LR at min_lr, after cyclic schedule ends')
 
     # EfficientNet options
     parser.add_argument('--ema_decay', type=float, default=0.9999,
@@ -162,6 +163,7 @@ def main(rank, world_size, arg):
 
     scheduler = get_scheduler(optim, arg.scheduler, int(1.0 * len(train_loader)), arg.epoch * len(train_loader), warmup_t=int(arg.warmup * len(train_loader)), warmup_lr_init=0.1 * scaled_lr)
 
+    arg.epoch = arg.epoch + arg.cool_down if arg.cool_down > 0 else arg.epoch
     model = Runner(arg, net, optim, rank, loss, logger, scheduler)
     if arg.test is False:
         if not arg.dali:
