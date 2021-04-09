@@ -59,15 +59,22 @@ Details about the models' performance retrained on ImageNet are below:
 ```
 python3 main.py -h
 usage: main.py [-h] --save_dir SAVE_DIR [--root ROOT] [--gpus GPUS]
-               [--num_workers NUM_WORKERS] [--model {b0}] [--epoch EPOCH]
+               [--num_workers NUM_WORKERS] [--model MODEL] [--epoch EPOCH]
                [--batch_size BATCH_SIZE] [--val_batch_size VAL_BATCH_SIZE]
-               [--test] [--print_freq PRINT_FREQ] [--ema_decay EMA_DECAY]
-               [--dropout_rate DROPOUT_RATE]
+               [--test] [--print_freq PRINT_FREQ] [--num_classes NUM_CLASSES]
+               [--ema] [--color_jitter COLOR_JITTER] [--pca]
+               [--crop_pct CROP_PCT] [--cool_down COOL_DOWN]
+               [--ema_decay EMA_DECAY] [--dropout_rate DROPOUT_RATE]
                [--dropconnect_rate DROPCONNECT_RATE]
-               [--optim {rmsprop,rmsproptf}] [--lr LR] [--warmup WARMUP]
+               [--optim {rmsprop,rmsproptf,sgd}] [--lr LR] [--warmup WARMUP]
                [--beta [BETA [BETA ...]]] [--momentum MOMENTUM] [--eps EPS]
                [--decay DECAY] [--scheduler {exp,cosine,none}] [--amp]
-
+               [--dali] [--se_r SE_R] [--REGNET_WA REGNET_WA]
+               [--REGNET_W0 REGNET_W0] [--REGNET_WM REGNET_WM]
+               [--REGNET_DEPTH REGNET_DEPTH] [--REGNET_STRIDE REGNET_STRIDE]
+               [--REGNET_GROUP_W REGNET_GROUP_W]
+               [--REGNET_BOT_MUL REGNET_BOT_MUL]
+               [--REGNET_STEM_W REGNET_STEM_W]
 
 Pytorch EfficientNet
 
@@ -78,7 +85,7 @@ optional arguments:
   --gpus GPUS           Select GPU Numbers | 0,1,2,3 |
   --num_workers NUM_WORKERS
                         Select CPU Number workers
-  --model {b0}          The type of Efficient net.
+  --model MODEL         The type of Efficient net.
   --epoch EPOCH         The number of epochs
   --batch_size BATCH_SIZE
                         The size of batch
@@ -87,11 +94,21 @@ optional arguments:
   --test                Only Test
   --print_freq PRINT_FREQ
                         The iterations of print results
+  --num_classes NUM_CLASSES
+                        Number of classes
+  --ema                 Using exponential moving average for testing
+  --color_jitter COLOR_JITTER
+                        Color jitter factor (default: 0.0)
+  --pca                 add AlexNet - style PCA - based noise
+  --crop_pct CROP_PCT   Input image center crop percent (for validation only)
+  --cool_down COOL_DOWN
+                        epochs to cooldown LR at min_lr, after cyclic schedule
+                        ends
   --ema_decay EMA_DECAY
                         Exponential Moving Average Term
   --dropout_rate DROPOUT_RATE
   --dropconnect_rate DROPCONNECT_RATE
-  --optim {rmsprop,rmsproptf}
+  --optim {rmsprop,rmsproptf,sgd}
   --lr LR               Base learning rate when train batch size is 256.
   --warmup WARMUP
   --beta [BETA [BETA ...]]
@@ -101,6 +118,25 @@ optional arguments:
   --scheduler {exp,cosine,none}
                         Learning rate scheduler type
   --amp                 Use Native Torch AMP mixed precision
+  --dali                Use Naidiv DaLi library for loading
+  --se_r SE_R           Squeeze-and-Excitation rate
+  --REGNET_WA REGNET_WA
+                        Slop
+  --REGNET_W0 REGNET_W0
+                        Initial width
+  --REGNET_WM REGNET_WM
+                        Quantization
+  --REGNET_DEPTH REGNET_DEPTH
+                        Depth
+  --REGNET_STRIDE REGNET_STRIDE
+                        Stride of each stage
+  --REGNET_GROUP_W REGNET_GROUP_W
+                        Group width
+  --REGNET_BOT_MUL REGNET_BOT_MUL
+                        Bottleneck multiplier (bm = 1 / b from the paper)
+  --REGNET_STEM_W REGNET_STEM_W
+                        Stem width
+
 
 
 ```
