@@ -13,6 +13,7 @@ from lr_scheduler import StepLR, CosineAnnealingLR
 
 from models.effnet import EfficientNet
 from models.regnet import RegNet
+from models.resnet import resnet50
 from runner import Runner
 from loader import get_loaders, get_loaders_dali
 
@@ -106,6 +107,16 @@ def get_model(arg, classes=1000):
         mfg = dict(REGNET_W0=48, REGNET_WA=27.89, REGNET_WM=2.09, REGNET_GROUP_W=8, REGNET_DEPTH=16)
         arg = overrider(arg, mfg)
         return RegNet(arg), 224
+    elif arg.model == "regnet_06":
+        mfg = dict(REGNET_W0=48, REGNET_WA=32.54, REGNET_WM=2.32, REGNET_GROUP_W=8, REGNET_DEPTH=15)
+        arg = overrider(arg, mfg)
+        return RegNet(arg), 224
+    elif arg.model == "regnet_08":
+        mfg = dict(REGNET_W0=56, REGNET_WA=38.84, REGNET_WM=2.4, REGNET_GROUP_W=16, REGNET_DEPTH=14)
+        arg = overrider(arg, mfg)
+        return RegNet(arg), 224
+    elif arg.model == "resnet50":
+        return resnet50(), 224
 
 
 def get_scheduler(optim, sche_type, step_size, t_max, warmup_t=0, t_min=0, warmup_lr_init=0):
@@ -116,6 +127,22 @@ def get_scheduler(optim, sche_type, step_size, t_max, warmup_t=0, t_min=0, warmu
         return CosineAnnealingLR(optim, t_max, eta_min=t_min, warmup_t=warmup_t, step_size=step_size, warmup_lr_init=warmup_lr_init)
     else:
         return None
+
+def add_weight_decay(model, weight_decay=1e-5, skip_list=()):
+    """Filter out bias, bn and other 1d params from weight decay
+    """
+    decay = []
+    no_decay = []
+    for name, param in model.named_parameters():
+        if not param.requires_grad:
+            continue  # frozen weights
+        if len(param.shape) == 1 or name.endswith(".bias") or name in skip_list:
+            no_decay.append(param)
+        else:
+            decay.append(param)
+    return [
+        {'params': no_decay, 'weight_decay': 0.},
+        {'params': decay, 'weight_decay': weight_decay}]
 
 def setup(rank, world_size):
     os.environ['MASTER_ADDR'] = 'localhost'
@@ -153,12 +180,14 @@ def main(rank, world_size, arg):
     
     # net = nn.DataParallel(net).to(torch_device)
     loss = nn.CrossEntropyLoss()
+
+    parameters = add_weight_decay(net, weight_decay=arg.decay)
     
     optim = {
         # "adam" : lambda : torch.optim.Adam(net.parameters(), lr=arg.lr, betas=arg.beta, weight_decay=arg.decay),
-        "sgd": lambda : torch.optim.SGD(net.parameters(), lr=scaled_lr, momentum=arg.momentum, weight_decay=arg.decay, nesterov=True),
-        "rmsproptf": lambda : RMSpropTF(net.parameters(), lr=scaled_lr, momentum=arg.momentum, eps=arg.eps, weight_decay=arg.decay),
-        "rmsprop" : lambda : torch.optim.RMSprop(net.parameters(), lr=scaled_lr, momentum=arg.momentum, eps=arg.eps, weight_decay=arg.decay)
+        "sgd": lambda : torch.optim.SGD(parameters, lr=scaled_lr, momentum=arg.momentum, nesterov=True),
+        "rmsproptf": lambda : RMSpropTF(parameters, lr=scaled_lr, momentum=arg.momentum, eps=arg.eps),
+        "rmsprop" : lambda : torch.optim.RMSprop(parameters, lr=scaled_lr, momentum=arg.momentum, eps=arg.eps)
     }[arg.optim]()
 
     scheduler = get_scheduler(optim, arg.scheduler, int(1.0 * len(train_loader)), arg.epoch * len(train_loader), warmup_t=int(arg.warmup * len(train_loader)), warmup_lr_init=0.1 * scaled_lr)
