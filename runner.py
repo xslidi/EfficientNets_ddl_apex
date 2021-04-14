@@ -16,13 +16,14 @@ IAGENET_IMAGES_NUM_TEST = 50000
 IAGENET_IMAGES_NUM_TRAIN = 1281166
 
 class Runner():
-    def __init__(self, arg, net, optim, rank, loss, logger, scheduler=None):
+    def __init__(self, arg, net, optim, rank, loss, logger, scheduler=None, world_size=1):
         self.arg = arg
         self.save_dir = arg.save_dir
 
         self.logger = logger
 
         self.rank = rank
+        self.world_size = world_size
 
         self.net = net
         if self.arg.ema:
@@ -131,7 +132,7 @@ class Runner():
         # print("Model:\n{}".format(self.net))
         train_num = IAGENET_IMAGES_NUM_TRAIN if self.arg.dali else len(train_loader.dataset)
         print("\nStart Train len :", train_num) 
-        all_iters = train_num // (self.arg.batch_size)                
+        all_iters = train_num // (self.arg.batch_size * self.world_size)                
         self.net.train()
     
         for epoch in range(self.start_epoch, self.arg.epoch):
