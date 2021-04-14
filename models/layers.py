@@ -5,10 +5,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# class Swish(nn.Module):
-#     def forward(self, x):
-#         return x * torch.sigmoid(x)
-
 
 def conv_bn_act(in_, out_, kernel_size,
                 stride=1, groups=1, bias=True,
@@ -19,16 +15,7 @@ def conv_bn_act(in_, out_, kernel_size,
         nn.BatchNorm2d(out_, eps, momentum),
         act_layer(inplace=True)
     )
-
-# def conv_bn_relu(in_, out_, kernel_size,
-#                 stride=1, groups=1, bias=True,
-#                 eps=1e-5, momentum=0.01):
-#     return nn.Sequential(
-#         SamePadConv2d(in_, out_, kernel_size, stride, groups=groups, bias=bias),
-#         nn.BatchNorm2d(out_, eps, momentum),
-#         nn.ReLU(inplace=True)
-#     )                
-
+             
 
 def conv2d(w_in, w_out, k, stride=1, groups=1, bias=False):
     """Helper for building a conv2d layer."""
@@ -36,6 +23,24 @@ def conv2d(w_in, w_out, k, stride=1, groups=1, bias=False):
     s, p, g, b = stride, (k - 1) // 2, groups, bias
     return nn.Conv2d(w_in, w_out, k, stride=s, padding=p, groups=g, bias=b)
     
+class Conv_Bn_Act(nn.Module):
+    def __init__(self, in_, out_, kernel_size,
+                stride=1, groups=1, bias=True,
+                eps=1e-3, momentum=0.01, act_layer=nn.SiLU, mode='tf'):
+        super(Conv_Bn_Act, self).__init__()
+
+        if mode == 'tf':
+            self.conv = SamePadConv2d(in_, out_, kernel_size, stride, groups=groups, bias=bias)  
+        else: 
+            self.conv = conv2d(in_, out_, kernel_size, stride, groups=groups, bias=bias)
+        self.bn = nn.BatchNorm2d(out_, eps, momentum)
+        self.act = act_layer
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.act(x)
+        return x
 
 
 class SamePadConv2d(nn.Conv2d):
