@@ -165,12 +165,12 @@ def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200
     
     train_loader = DataLoader(train_dataset,
         batch_size=batch_size, shuffle=(train_sampler is None),
-        num_workers=num_workers, pin_memory=True, sampler=train_sampler,collate_fn=collate_fn
+        num_workers=num_workers, pin_memory=True, sampler=train_sampler,collate_fn=collate_fn, persistent_workers=True
     )
 
     val_loader = DataLoader(val_dataset,
         batch_size=val_batch_size, shuffle=False,
-        num_workers=num_workers, pin_memory=True, collate_fn=collate_fn
+        num_workers=num_workers, pin_memory=True, collate_fn=collate_fn, persistent_workers=True
     )
     if prefetch:
         train_loader = PrefetchLoader(train_loader)
