@@ -239,6 +239,7 @@ class Runner():
                 epoch, acc, acc5))
             save_time = time.time() - start
             print('save_time: %.4f s' % (save_time))
+        self.save(epoch, 'last')
 
     def test(self, train_loader, val_loader, ema=True):
         print("\n Start Test")
