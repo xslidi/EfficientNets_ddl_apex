@@ -176,7 +176,7 @@ def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200
         train_loader = PrefetchLoader(train_loader)
         val_loader = PrefetchLoader(val_loader)
 
-    return train_loader, val_loader, train_loader.sampler
+    return train_loader, val_loader
 
 
 

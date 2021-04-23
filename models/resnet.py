@@ -192,7 +192,7 @@ class ResNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=1000, in_channels=3, cardinality=1, 
                 base_width=64, stem_width=64, stem_type='', output_stride=32, down_kernel_size=1, avg_down=False, 
-                act_layer=nn.ReLU, norm_layer=nn.BatchNorm2d, global_pool='avg', block_args=None, zero_init_residual=False):
+                act_layer=nn.ReLU, norm_layer=nn.BatchNorm2d, global_pool='avg', block_args=None, zero_init_residual=True):
         block_args = block_args or dict()
         assert output_stride in (8, 16, 32)
         self.num_classes = num_classes
