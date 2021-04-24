@@ -121,8 +121,8 @@ def fast_collate(batch):
         assert False
 
 def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200, prefetch=False, color_jitter=0.4, pca=False, crop_pct=0.875):
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+    normalize = transforms.Normalize(mean=IMAGENET_DEFAULT_MEAN,
+                                     std=IMAGENET_DEFAULT_STD)
     scale_size = int(math.floor(resolution / crop_pct))
 
     transform_train = []
