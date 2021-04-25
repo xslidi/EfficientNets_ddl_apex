@@ -17,7 +17,6 @@ from models.resnet import resnet50
 from runner import Runner
 from loader import get_loaders, get_loaders_dali
 
-
 from logger import Logger
 
 
@@ -49,6 +48,7 @@ def arg_parse():
     parser.add_argument('--pca', action="store_true", help='add AlexNet - style PCA - based noise') 
     parser.add_argument('--crop_pct', default=0.875, type=float, help='Input image center crop percent (for validation only)') 
     parser.add_argument('--cool_down', type=int, default=0, help='epochs to cooldown LR at min_lr, after cyclic schedule ends')
+    parser.add_argument('--no_filter_bias', action="store_true", help='not filter out bias, bn and other 1d params from weight decay') 
 
     # EfficientNet options
     parser.add_argument('--ema_decay', type=float, default=0.9999,
@@ -174,29 +174,34 @@ def main(rank, world_size, arg):
     net = nn.parallel.DistributedDataParallel(net, device_ids=[rank])
     
     if not arg.dali:
-        train_loader, val_loader, train_sampler = get_loaders(arg.root, arg.batch_size, res, num_workers, arg.val_batch_size, color_jitter=arg.color_jitter, pca=arg.pca, crop_pct=arg.crop_pct)
+        train_loader, val_loader = get_loaders(arg.root, arg.batch_size, res, num_workers, arg.val_batch_size, color_jitter=arg.color_jitter, pca=arg.pca, crop_pct=arg.crop_pct)
     else:
         train_loader, val_loader = get_loaders_dali(arg.root, arg.batch_size, res, rank, world_size, num_workers)
     
     # net = nn.DataParallel(net).to(torch_device)
     loss = nn.CrossEntropyLoss()
 
-    parameters = add_weight_decay(net, weight_decay=arg.decay)
+    if not arg.no_filter_bias:
+        parameters = add_weight_decay(net, weight_decay=arg.decay)
+        weight_decay = 0
+    else:
+        parameters = net.parameters()
+        weight_decay = arg.decay
     
     optim = {
         # "adam" : lambda : torch.optim.Adam(net.parameters(), lr=arg.lr, betas=arg.beta, weight_decay=arg.decay),
-        "sgd": lambda : torch.optim.SGD(parameters, lr=scaled_lr, momentum=arg.momentum, nesterov=True),
-        "rmsproptf": lambda : RMSpropTF(parameters, lr=scaled_lr, momentum=arg.momentum, eps=arg.eps),
-        "rmsprop" : lambda : torch.optim.RMSprop(parameters, lr=scaled_lr, momentum=arg.momentum, eps=arg.eps)
+        "sgd": lambda : torch.optim.SGD(parameters, lr=scaled_lr, momentum=arg.momentum, nesterov=True, weight_decay=weight_decay),
+        "rmsproptf": lambda : RMSpropTF(parameters, lr=scaled_lr, momentum=arg.momentum, eps=arg.eps, weight_decay=weight_decay),
+        "rmsprop" : lambda : torch.optim.RMSprop(parameters, lr=scaled_lr, momentum=arg.momentum, eps=arg.eps, weight_decay=weight_decay)
     }[arg.optim]()
 
     scheduler = get_scheduler(optim, arg.scheduler, int(1.0 * len(train_loader)), arg.epoch * len(train_loader), warmup_t=int(arg.warmup * len(train_loader)), warmup_lr_init=0.1 * scaled_lr)
 
     arg.epoch = arg.epoch + arg.cool_down if arg.cool_down > 0 else arg.epoch
-    model = Runner(arg, net, optim, rank, loss, logger, scheduler)
+    model = Runner(arg, net, optim, rank, loss, logger, scheduler, world_size)
     if arg.test is False:
         if not arg.dali:
-            model.train(train_loader, val_loader, train_sampler)
+            model.train(train_loader, val_loader, train_loader.sampler)
         else:
             model.train(train_loader, val_loader)
         cleanup()
