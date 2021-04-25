@@ -59,7 +59,7 @@ class ResBottleneckBlock(Module):
 
     def forward(self, x):
         x_p = self.bn(self.proj(x)) if self.proj else x
-        return self.af(self.f(x)) + x_p
+        return self.af(self.f(x) + x_p)
 
 class SimpleStem(Module):
     """Simple stem for ImageNet: 3x3, BN, AF."""
