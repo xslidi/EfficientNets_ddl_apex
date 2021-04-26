@@ -20,13 +20,13 @@ def conv_bn_act(in_, out_, kernel_size,
 def conv2d(w_in, w_out, k, stride=1, groups=1, bias=False):
     """Helper for building a conv2d layer."""
     assert k % 2 == 1, "Only odd size kernels supported to avoid padding issues."
-    s, p, g, b = stride, (k - 1) // 2, groups, bias
+    s, p, g, b = stride, ((stride - 1) + (k - 1)) // 2, groups, bias
     return nn.Conv2d(w_in, w_out, k, stride=s, padding=p, groups=g, bias=b)
     
 class Conv_Bn_Act(nn.Module):
     def __init__(self, in_, out_, kernel_size,
                 stride=1, groups=1, bias=True,
-                eps=1e-3, momentum=0.01, act_layer=nn.SiLU, mode='tf'):
+                eps=1e-3, momentum=0.01, act_layer=nn.SiLU, mode=''):
         super(Conv_Bn_Act, self).__init__()
 
         if mode == 'tf':
@@ -34,7 +34,7 @@ class Conv_Bn_Act(nn.Module):
         else: 
             self.conv = conv2d(in_, out_, kernel_size, stride, groups=groups, bias=bias)
         self.bn = nn.BatchNorm2d(out_, eps, momentum)
-        self.act = act_layer
+        self.act = act_layer(inplace=True)
 
     def forward(self, x):
         x = self.conv(x)
