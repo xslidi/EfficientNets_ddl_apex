@@ -3,7 +3,7 @@ import math
 import torch
 import torch.nn as nn
 
-from models.layers import conv_bn_act, SamePadConv2d, Flatten, SEModule, DropConnect
+from models.layers import conv2d, Flatten, SEModule, DropConnect, Conv_Bn_Act
 
 
 class MBConv(nn.Module):
@@ -12,16 +12,16 @@ class MBConv(nn.Module):
                  se_ratio, dc_ratio=0.2):
         super().__init__()
         mid_ = in_ * expand
-        self.expand_conv = conv_bn_act(in_, mid_, kernel_size=1, bias=False) if expand != 1 else nn.Identity()
+        self.expand_conv = Conv_Bn_Act(in_, mid_, kernel_size=1, eps=1e-3, momentum=0.01, bias=False) if expand != 1 else nn.Identity()
 
-        self.depth_wise_conv = conv_bn_act(mid_, mid_,
+        self.depth_wise_conv = Conv_Bn_Act(mid_, mid_,
                                            kernel_size=kernel_size, stride=stride,
-                                           groups=mid_, bias=False)
+                                           eps=1e-3, momentum=0.01, groups=mid_, bias=False)
 
         self.se = SEModule(mid_, int(in_ * se_ratio)) if se_ratio > 0 else nn.Identity()
 
         self.project_conv = nn.Sequential(
-            SamePadConv2d(mid_, out_, kernel_size=1, stride=1, bias=False),
+            conv2d(mid_, out_, kernel_size=1, stride=1, bias=False),
             nn.BatchNorm2d(out_, 1e-3, 0.01)
         )
 
@@ -99,7 +99,7 @@ class EfficientNet(nn.Module):
 
             return blocks
 
-        self.stem = conv_bn_act(3, renew_ch(32), kernel_size=3, stride=2, bias=False)
+        self.stem = Conv_Bn_Act(3, renew_ch(32), kernel_size=3, eps=1e-3, momentum=0.01, stride=2, bias=False)
         
         self.blocks = nn.Sequential(*blocks_builter(channals, expand, k, s, repeat))
         # self.blocks = nn.Sequential(
@@ -114,7 +114,7 @@ class EfficientNet(nn.Module):
         # )
 
         self.head = nn.Sequential(
-            *conv_bn_act(renew_ch(320), renew_ch(1280), kernel_size=1, bias=False),
+            Conv_Bn_Act(renew_ch(320), renew_ch(1280), kernel_size=1, eps=1e-3, momentum=0.01, bias=False),
             nn.AdaptiveAvgPool2d(1),
             nn.Dropout2d(dropout_rate, True) if dropout_rate > 0 else nn.Identity(),
             Flatten(),
@@ -125,7 +125,7 @@ class EfficientNet(nn.Module):
 
     def init_weights(self):
         for m in self.modules():
-            if isinstance(m, SamePadConv2d):
+            if isinstance(m, conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out")
             elif isinstance(m, nn.Linear):
                 init_range = 1.0 / math.sqrt(m.weight.shape[1])
