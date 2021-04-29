@@ -81,11 +81,6 @@ def arg_parse():
     parser.add_argument('--REGNET_GROUP_W', type=int, default=8, help='Group width') 
     parser.add_argument('--REGNET_BOT_MUL', type=float, default=1.0, help='Bottleneck multiplier (bm = 1 / b from the paper)')
     parser.add_argument('--REGNET_STEM_W', type=int, default=32, help='Stem width') 
-
-    
-
-
-     
     
     return parser.parse_args()
 

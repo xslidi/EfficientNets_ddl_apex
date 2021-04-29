@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch.nn import Module
 from torch import nn
-from models.layers import SamePadConv2d, conv_bn_act, SEModule, conv2d
+from models.layers import SamePadConv2d, Conv_Bn_Act, SEModule, conv2d
 
 class Anyhead(Module):
     """AnyNet head: AvgPool, 1x1."""
@@ -29,8 +29,8 @@ class BottleneckTransform(Module):
         w_b = int(round(w_out * params['bot_mul']))
         w_se = int(round(w_in * params['se_r']))
         groups = w_b // params['group_w']
-        self.a = conv_bn_act(w_in, w_b, 1, eps=1e-5, momentum=0.1, act_layer=nn.ReLU, mode=None, bias=False)
-        self.b = conv_bn_act(w_b, w_b, 3, stride=stride, groups=groups, eps=1e-5, momentum=0.1, act_layer=nn.ReLU, mode=None, bias=False)
+        self.a = Conv_Bn_Act(w_in, w_b, 1, eps=1e-5, momentum=0.1, act_layer=nn.ReLU, mode=None, bias=False)
+        self.b = Conv_Bn_Act(w_b, w_b, 3, stride=stride, groups=groups, eps=1e-5, momentum=0.1, act_layer=nn.ReLU, mode=None, bias=False)
         self.se = SEModule(w_b, w_se, act_layer=nn.ReLU) if w_se else None
         self.c = conv2d(w_b, w_out, 1)
         self.c_bn = nn.BatchNorm2d(w_out)

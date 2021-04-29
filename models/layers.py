@@ -6,17 +6,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def conv_bn_act(in_, out_, kernel_size,
-                stride=1, groups=1, bias=True,
-                eps=1e-3, momentum=0.01, act_layer=nn.SiLU, mode='tf'):
-    conv = SamePadConv2d(in_, out_, kernel_size, stride, groups=groups, bias=bias) if mode == 'tf' else conv2d(in_, out_, kernel_size, stride, groups=groups, bias=bias)
-    return nn.Sequential(
-        conv,
-        nn.BatchNorm2d(out_, eps, momentum),
-        act_layer(inplace=True)
-    )
-             
-
 def conv2d(w_in, w_out, k, stride=1, groups=1, bias=False):
     """Helper for building a conv2d layer."""
     assert k % 2 == 1, "Only odd size kernels supported to avoid padding issues."
@@ -26,7 +15,7 @@ def conv2d(w_in, w_out, k, stride=1, groups=1, bias=False):
 class Conv_Bn_Act(nn.Module):
     def __init__(self, in_, out_, kernel_size,
                 stride=1, groups=1, bias=True,
-                eps=1e-3, momentum=0.01, act_layer=nn.SiLU, mode=''):
+                eps=1e-5, momentum=0.1, act_layer=nn.SiLU, mode=''):
         super(Conv_Bn_Act, self).__init__()
 
         if mode == 'tf':
