@@ -81,7 +81,7 @@ def arg_parse():
     parser.add_argument('--REGNET_GROUP_W', type=int, default=8, help='Group width') 
     parser.add_argument('--REGNET_BOT_MUL', type=float, default=1.0, help='Bottleneck multiplier (bm = 1 / b from the paper)')
     parser.add_argument('--REGNET_STEM_W', type=int, default=32, help='Stem width') 
-    
+
     return parser.parse_args()
 
 def overrider(arg, mfg):
@@ -179,6 +179,7 @@ def main(rank, world_size, arg):
     if not arg.no_filter_bias:
         parameters = add_weight_decay(net, weight_decay=arg.decay)
         weight_decay = 0
+        print('filter out bias, bn and other 1d params from weight decay')
     else:
         parameters = net.parameters()
         weight_decay = arg.decay
@@ -200,7 +201,7 @@ def main(rank, world_size, arg):
         else:
             model.train(train_loader, val_loader)
         cleanup()
-    model.test(train_loader, val_loader, arg.ema)
+    # model.test(train_loader, val_loader, arg.ema)
     
 def run_wrap(main_worker, world_size, arg):
 
