@@ -2,7 +2,7 @@ model,top1,top1_err,top5,top5_err,param_count,flops,img_size,cropt_pct,augment,G
 resnet50_b,76.58,23.42,93.13,6.87,25,4.1,224,0.875,standard,2*p40,21.6,768,enable,3800,exp
 resnet50_b,76.51,23.49,92.97,7.03,25,4.1,224,0.875,standard,p40,21.6,384,enable,7200,exp
 efficientnet_b0,76.47,23.53,92.95,7.05,5.3,0.39,224,0.875,none,p100,15,256,enable,4650,exp
-resnet51_b,76.14,23.86,93.02,6.98,25,4.1,224,0.875,none,2*p40,21.6,768,enable,3800,exp
+resnet50_b,76.14,23.86,93.02,6.98,25,4.1,224,0.875,none,2*p40,21.6,768,enable,3800,exp
 regnet_600mf,74.51,25.49,92.05,7.95,6.1,0.6,224,0.875,none,p40,22.6,1024,enable,3800,cosine
-regnet_400mf,73.42,26.58,91.42,8.58,4.3,0.4,224,0.875,none,p40,21.8,1024,enable,3400,cosine
+regnet_400mf,73.93,26.07,91.71,8.29,4.3,0.4,224,0.875,none,p40,21.8,1024,enable,3400,cosine
 regnety_200mf,70.55,29.45,89.73,10.27,3.2,0.2,224,0.875,none,p40,16.7,1024,enable,2800,cosine
