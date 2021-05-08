@@ -112,6 +112,8 @@ def get_model(arg, classes=1000):
         return RegNet(arg), 224
     elif arg.model == "resnet50":
         return resnet50(), 224
+    elif arg.model == "resnet50d":
+        return resnet50(stem_width=32, stem_type='deep', avg_down=True), 224
 
 
 def get_scheduler(optim, sche_type, step_size, t_max, warmup_t=0, t_min=0, warmup_lr_init=0):
