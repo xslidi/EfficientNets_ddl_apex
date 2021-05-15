@@ -185,7 +185,8 @@ class Runner():
             epoch_time = time.time() - epoch_start
             print('epoch_time: %.4f' % (epoch_time))
             self.logger.log_write("valid", epoch_time=epoch_time)
-        self.writter.close()
+        if self.rank == 0:
+            self.writter.close()
 
 
     def _get_acc(self, loader, ema=True):

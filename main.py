@@ -110,6 +110,10 @@ def get_model(arg, classes=1000):
         mfg = dict(REGNET_W0=56, REGNET_WA=38.84, REGNET_WM=2.4, REGNET_GROUP_W=16, REGNET_DEPTH=14)
         arg = overrider(arg, mfg)
         return RegNet(arg), 224
+    elif arg.model == "regnet_16":
+        mfg = dict(REGNET_W0=48, REGNET_WA=20.71, REGNET_WM=2.65, REGNET_GROUP_W=24, REGNET_DEPTH=27)
+        arg = overrider(arg, mfg)
+        return RegNet(arg), 224
     elif arg.model == "resnet50":
         return resnet50(), 224
     elif arg.model == "resnet50d":
