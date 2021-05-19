@@ -169,7 +169,7 @@ def make_blocks(block_fn, channels, block_repeats, inplanes, output_stride=32, d
 
             downsample = downsample_avg(**down_kwargs) if avg_down else downsample_conv(**down_kwargs)
 
-        block_kwargs = dict(dilation=dilation)
+        block_kwargs = dict(dilation=dilation, **kwargs)
         blocks = []
         for block_idx in range(num_blocks):
             downsample = downsample if block_idx == 0 else None
