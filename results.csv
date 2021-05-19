@@ -1,4 +1,5 @@
 model,top1,top1_err,top5,top5_err,param_count,flops,img_size,cropt_pct,augment,GPU,Memory,batch_size,amp,epoch_time,lr_scheduler
+regnety_1.6gf,77.41,22.59,93.64,6.36,11.2,1.6,224,0.875,none,2*p40,22.6,768,enable,3500,cosine
 resnet50_d,77.22,22.78,93.58,6.42,25,4.3,224,0.875,none,2*p40,21.6,768,enable,4100,cosine
 resnet50_b,76.71,23.29,93.36,6.64,25,4.1,224,0.875,none,2*p40,21.6,768,enable,3800,cosine
 resnet50_b,76.58,23.42,93.13,6.87,25,4.1,224,0.875,standard,2*p40,21.6,768,enable,3800,exp
