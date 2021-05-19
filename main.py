@@ -118,6 +118,8 @@ def get_model(arg, classes=1000):
         return resnet50(), 224
     elif arg.model == "resnet50d":
         return resnet50(stem_width=32, stem_type='deep', avg_down=True), 224
+    elif arg.model == "seresnet50":
+        return resnet50(block_args=dict(se_r=0.25)), 224
 
 
 def get_scheduler(optim, sche_type, step_size, t_max, warmup_t=0, t_min=0, warmup_lr_init=0):
@@ -227,4 +229,5 @@ if __name__ == "__main__":
 
     n_gpus = torch.cuda.device_count()
     print(f"You have {n_gpus} GPUs.")
+    mp.set_start_method("spawn")
     run_wrap(main, n_gpus, arg)
