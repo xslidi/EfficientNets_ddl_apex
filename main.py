@@ -70,6 +70,7 @@ def arg_parse():
                         help="Learning rate scheduler type")
     parser.add_argument('--amp', action="store_true", help='Use Native Torch AMP mixed precision')                        
     parser.add_argument('--dali', action="store_true", help='Use Naidiv DaLi library for loading')
+    parser.add_argument('--profiler', action="store_true", help='Use profiler tool')
 
     # RegNet operations
     parser.add_argument('--se_r', type=float, default=0.25, help='Squeeze-and-Excitation rate')
@@ -203,7 +204,11 @@ def main(rank, world_size, arg):
 
     arg.epoch = arg.epoch + arg.cool_down if arg.cool_down > 0 else arg.epoch
     model = Runner(arg, net, optim, rank, loss, logger, scheduler, world_size)
-    if arg.test is False:
+
+    if arg.profiler:
+        model.profiler(train_loader, val_loader, train_loader.sampler)
+
+    elif arg.test is False:
         if not arg.dali:
             model.train(train_loader, val_loader, train_loader.sampler)
         else:

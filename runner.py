@@ -267,4 +267,48 @@ class Runner():
                 res.append(correct_k)
             return res
 
+    def profiler(self, train_loader, val_loader, trainsampler=None):
+        train_num = IAGENET_IMAGES_NUM_TRAIN if self.arg.dali else len(train_loader.dataset)
+        print("\nStart Train len :", train_num) 
 
+        self.net.train()
+        if trainsampler:
+            trainsampler.set_epoch(0)
+        if self.arg.amp:
+            scaler = torch.cuda.amp.GradScaler()
+        
+        with torch.profiler.profile(
+            activities=[
+                torch.profiler.ProfilerActivity.CPU,
+                torch.profiler.ProfilerActivity.CUDA],
+            schedule=torch.profiler.schedule(wait=2, warmup=2, active=6, repeat=1),
+            on_trace_ready=torch.profiler.tensorboard_trace_handler('./profiler'),
+            with_stack=True
+        ) as profiler:        
+            for i, (input_, target_) in enumerate(train_loader):
+                target_ = target_.to(self.rank, non_blocking=True)
+                
+                self.optim.zero_grad()
+                if self.arg.amp:
+                    with torch.cuda.amp.autocast():
+                        out = self.net(input_)
+                        loss = self.loss(out, target_)
+
+                    scaler.scale(loss).backward()
+                    scaler.step(self.optim)
+                    scaler.update()                
+                else:
+                    out = self.net(input_)
+                    loss = self.loss(out, target_)                    
+                    loss.backward()                
+                    self.optim.step()
+
+                if self.scheduler:
+                    self.scheduler.step()
+                print(loss)
+                if self.arg.ema:
+                    self.update_ema()
+                profiler.step()
+                if i + 1 >= 11:
+                    break
+       
