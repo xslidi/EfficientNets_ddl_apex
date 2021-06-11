@@ -1,4 +1,5 @@
 model,top1,top1_err,top5,top5_err,param_count,flops,img_size,cropt_pct,augment,GPU,Memory,batch_size,amp,epoch_time,lr_scheduler
+regnety_4.0gf,78.43,21.57,94.17,5.83,20.6,4,224,0.875,none,2*p40,22.6,768,enable,5000,cosine
 regnety_3.2gf,78.41,21.59,93.98,6.02,19.4,3.2,224,0.875,none,2*p40,22.6,768,enable,5100,cosine
 seresnet50_b,77.58,22.42,93.72,6.28,28.1,4.1,224,0.875,none,p40,22.6,768,enable,4800,cosine
 regnety_1.6gf,77.41,22.59,93.64,6.36,11.2,1.6,224,0.875,none,2*p40,22.6,768,enable,3500,cosine
