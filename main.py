@@ -14,11 +14,14 @@ from lr_scheduler import StepLR, CosineAnnealingLR
 from models.effnet import EfficientNet
 from models.regnet import RegNet
 from models.resnet import resnet50
+from models.nfnet import NormFreeNet
+from models.nfnet_timm import nf_regnet_b0
 from runner import Runner
 from loader import get_loaders, get_loaders_dali
 
 from logger import Logger
 
+torch.backends.cudnn.benchmark = True
 
 def arg_parse():
     # projects description
@@ -37,7 +40,7 @@ def arg_parse():
     parser.add_argument('--model', type=str, default='regnet_02',
                         help='The type of Efficient net.')
     
-    parser.add_argument('--epoch', type=int, default=100, help='The number of epochs')
+    parser.add_argument('--epoch', type=int, default=120, help='The number of epochs')
     parser.add_argument('--batch_size', type=int, default=512, help='The size of batch')
     parser.add_argument('--val_batch_size', type=int, default=200, help='The size of batch in val set')
     parser.add_argument('--test', action="store_true", help='Only Test')
@@ -128,7 +131,13 @@ def get_model(arg, classes=1000):
     elif arg.model == "resnet50d":
         return resnet50(stem_width=32, stem_type='deep', avg_down=True), 224
     elif arg.model == "seresnet50":
-        return resnet50(block_args=dict(se_r=0.25)), 224
+        return resnet50(block_args=dict(attn_layer='se')), 224
+    elif arg.model == "ecanet50":
+        return resnet50(block_args=dict(attn_layer='eca')), 224
+    elif arg.model == "nfregnet_b0":
+        return NormFreeNet(arg), 192
+    elif arg.model == "nfregnet_b1":
+        return NormFreeNet(arg, depths=(2, 4, 7, 7)), 240
 
 
 def get_scheduler(optim, sche_type, step_size, t_max, warmup_t=0, t_min=0, warmup_lr_init=0):
@@ -191,7 +200,7 @@ def main(rank, world_size, arg):
         train_loader, val_loader = get_loaders_dali(arg.root, arg.batch_size, res, rank, world_size, num_workers)
     
     # net = nn.DataParallel(net).to(torch_device)
-    loss = nn.CrossEntropyLoss()
+    loss = nn.CrossEntropyLoss().cuda()
 
     if not arg.no_filter_bias:
         parameters = add_weight_decay(net, weight_decay=arg.decay)
@@ -216,11 +225,8 @@ def main(rank, world_size, arg):
     if arg.profiler:
         model.profiler(train_loader, val_loader, train_loader.sampler)
 
-    elif arg.test is False:
-        if not arg.dali:
-            model.train(train_loader, val_loader, train_loader.sampler)
-        else:
-            model.train(train_loader, val_loader)
+    if arg.test is False:
+        model.train(train_loader, val_loader)
         cleanup()
     # model.test(train_loader, val_loader, arg.ema)
     
