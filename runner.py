@@ -127,24 +127,24 @@ class Runner():
 
 
 
-    def train(self, train_loader, val_loader=None, trainsampler=None):
+    def train(self, train_loader, val_loader=None):
         
         # print("Model:\n{}".format(self.net))
         train_num = IAGENET_IMAGES_NUM_TRAIN if self.arg.dali else len(train_loader.dataset)
         print("\nStart Train len :", train_num) 
         all_iters = train_num // (self.arg.batch_size * self.world_size)                
         self.net.train()
+
+        if self.arg.amp:
+            scaler = torch.cuda.amp.GradScaler()
     
         for epoch in range(self.start_epoch, self.arg.epoch):
             self.net.train()
-            if trainsampler:
-                trainsampler.set_epoch(epoch)
+            if train_loader.sampler:
+                train_loader.sampler.set_epoch(epoch)
             
             epoch_start = time.time()
             start_time = time.time()
-
-            if self.arg.amp:
-                scaler = torch.cuda.amp.GradScaler()
 
             for i, (input_, target_) in enumerate(train_loader):
                 target_ = target_.to(self.rank, non_blocking=True)
@@ -202,7 +202,9 @@ class Runner():
                     self.ema.to(self.rank)
                     out = self.ema(input_)
                 else:
-                    out = self.net(input_)
+                    if self.arg.amp:
+                        with torch.cuda.amp.autocast():
+                            out = self.net(input_)
 
                 loss = self.loss(out, target_)
                 # out = F.softmax(out, dim=1)
@@ -245,10 +247,10 @@ class Runner():
     def test(self, train_loader, val_loader, ema=True):
         print("\n Start Test")
         self.load()
-        train_acc = self._get_acc(train_loader, ema=ema)
-        valid_acc = self._get_acc(val_loader, ema=ema)
-        self.logger.log_write("test", fname="test", train_acc=train_acc, valid_acc=valid_acc)
-        return train_acc, valid_acc
+        #, _, _ = self._get_acc(train_loader, ema=ema)
+        valid_acc, acc5, _ = self._get_acc(val_loader, ema=ema)
+        self.logger.log_write("test", fname="test", valid_acc=valid_acc)
+        return acc5, valid_acc
     
 
     def accuracy(self, output, target, topk=(1,)):
