@@ -65,15 +65,15 @@ class PrefetchLoader:
                 #     next_input = self.random_erasing(next_input)
 
             if not first:
-                yield inputs, target
+                yield input, target
             else:
                 first = False
 
             torch.cuda.current_stream().wait_stream(stream)
-            inputs = next_input
+            input = next_input
             target = next_target
 
-        yield inputs, target
+        yield input, target
 
     def __len__(self):
         return len(self.loader)
@@ -120,7 +120,7 @@ def fast_collate(batch):
     else:
         assert False
 
-def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200, prefetch=False, color_jitter=0.4, pca=False, crop_pct=0.875):
+def get_loaders(root, batch_size, resolution, num_workers=32, val_batch_size=200, prefetch=True, color_jitter=0.4, pca=False, crop_pct=0.875):
     normalize = transforms.Normalize(mean=IMAGENET_DEFAULT_MEAN,
                                      std=IMAGENET_DEFAULT_STD)
     scale_size = int(math.floor(resolution / crop_pct))
