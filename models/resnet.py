@@ -8,7 +8,7 @@ import math
 
 import torch
 import torch.nn as nn
-from models.layers import SEModule
+from models.layers import SEModule, ECAModule, get_attn
 
 def get_padding(kernel_size, stride, dilation=1):
     padding = ((stride - 1) + dilation * (kernel_size - 1)) // 2
@@ -68,7 +68,8 @@ class BasicBlock(nn.Module):
 class Bottleneck(nn.Module):
     expansion = 4
 
-    def __init__(self, inplanes, planes, stride=1, downsample=None, cardinality=1, base_width=64, dilation=1, act_layer=nn.ReLU, norm_layer=nn.BatchNorm2d, se_r=0):
+    def __init__(self, inplanes, planes, stride=1, downsample=None, cardinality=1, base_width=64, 
+                dilation=1, act_layer=nn.ReLU, norm_layer=nn.BatchNorm2d, attn_layer=None):
         super(Bottleneck, self).__init__()
 
         width = int(math.floor(planes * (base_width / 64)) * cardinality)
@@ -85,7 +86,8 @@ class Bottleneck(nn.Module):
         self.conv3 = nn.Conv2d(width, outplanes, kernel_size=1, bias=False)
         self.bn3 = norm_layer(outplanes)
 
-        self.se = SEModule(outplanes, int(outplanes * se_r)) if se_r else None
+        attn_kwards = dict(squeeze_ch=int(outplanes * 0.25)) if attn_layer == 'se' else dict()
+        self.se = get_attn(attn_layer, outplanes, **attn_kwards)
 
         self.act3 = act_layer(inplace=True)
         self.downsample = downsample
@@ -145,7 +147,8 @@ def downsample_avg(in_channels, out_channels, kernel_size, stride=1, dilation=1,
         norm_layer(out_channels)
     ])
 
-def make_blocks(block_fn, channels, block_repeats, inplanes, output_stride=32, down_kernel_size=1, avg_down=False, **kwargs):
+def make_blocks(block_fn, channels, block_repeats, inplanes, output_stride=32, down_kernel_size=1, 
+                avg_down=False, **kwargs):
 
     stages = []
     feature_info = []
@@ -191,8 +194,9 @@ class ResNet(nn.Module):
     """
 
     def __init__(self, block, layers, num_classes=1000, in_channels=3, cardinality=1, 
-                base_width=64, stem_width=64, stem_type='', output_stride=32, down_kernel_size=1, avg_down=False, 
-                act_layer=nn.ReLU, norm_layer=nn.BatchNorm2d, global_pool='avg', block_args=None, zero_init_residual=True):
+                base_width=64, stem_width=64, stem_type='', output_stride=32, down_kernel_size=1, 
+                avg_down=False, act_layer=nn.ReLU, norm_layer=nn.BatchNorm2d, global_pool='avg', 
+                block_args=None, zero_init_residual=True):
         block_args = block_args or dict()
         assert output_stride in (8, 16, 32)
         self.num_classes = num_classes
@@ -223,7 +227,10 @@ class ResNet(nn.Module):
 
         # Feature Blocks
         channels = [64, 128, 256, 512]
-        stage_modules, stage_feature_info = make_blocks(block, channels, layers, inplanes, cardinality=cardinality, base_width=base_width, output_stride=output_stride, avg_down=avg_down, down_kernel_size=down_kernel_size, act_layer=act_layer, norm_layer=norm_layer, **block_args)
+        stage_modules, stage_feature_info = make_blocks(block, channels, layers, inplanes, 
+                cardinality=cardinality, base_width=base_width, output_stride=output_stride, 
+                avg_down=avg_down, down_kernel_size=down_kernel_size, act_layer=act_layer, 
+                norm_layer=norm_layer, **block_args)
         for stage in stage_modules:
             self.add_module(*stage)
         self.feature_info.extend(stage_feature_info)
