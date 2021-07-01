@@ -4,7 +4,13 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.nn.modules import padding
 
+
+# Calculate symmetric padding for a convolution
+def get_padding(kernel_size, stride=1, dilation=1):
+    padding = ((stride - 1) + dilation * (kernel_size - 1)) // 2
+    return padding
 
 def conv2d(w_in, w_out, k, stride=1, groups=1, bias=False):
     """Helper for building a conv2d layer."""
@@ -89,5 +95,58 @@ class DropConnect(nn.Module):
 
         random_tensor = self.ratio
         random_tensor += torch.rand([x.shape[0], 1, 1, 1], dtype=torch.float, device=x.device)
-        random_tensor.requires_grad_(False)
+        # random_tensor.requires_grad_(False)
         return x / self.ratio * random_tensor.floor()
+
+class ScaledWSConv2d(nn.Conv2d):
+    """2D Conv layer with Scaled Weight Standardization."""
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=None, dilation=1,
+                    groups=1, gamma=1.0, bias=True, gain_init=1.0, eps=1e-5):
+        if padding is None:
+            padding = get_padding(kernel_size, stride, dilation)
+        super().__init__(in_channels, out_channels, kernel_size, stride=stride, padding=padding, 
+        dilation=dilation, groups=groups, bias=bias)
+        self.gain = nn.Parameter(torch.full((self.out_channels, 1, 1, 1), gain_init))
+        self.eps = eps
+        self.scale = gamma * self.weight[0].numel() ** -0.5
+
+
+
+    def get_weight(self):
+        std, mean = torch.std_mean(self.weight, dim=[1,2,3], keepdim=True, unbiased=False)
+        weight = self.scale * (self.weight - mean) / (std + self.eps)
+        return self.gain * weight
+
+    def forward(self, x):
+        return F.conv2d(x, self.get_weight(), self.bias, self.stride, self.padding, 
+                self.dilation, self.groups)
+
+class ECAModule(nn.Module):
+    def __init__(self, channels=None, kernel_size=3, gamma=2, beta=1):
+        super(ECAModule, self).__init__()
+        if channels is not None:
+            t = int(abs(math.log(channels, 2) + beta) / gamma)
+            kernel_size = max(t if t % 2 else t + 1, 3)
+        assert kernel_size % 2 == 1
+        padding = (kernel_size - 1) // 2
+        
+        self.conv = nn.Conv1d(1, 1, kernel_size=kernel_size, padding=padding, bias=False)
+        self.gate = nn.Sigmoid()
+
+    def forward(self, x):
+        y = x.mean((2, 3)).view(x.shape[0], 1, -1)
+        y = self.conv(y)
+        y = self.gate(y).view(y.shape[0], -1, 1, 1)
+        return x * y.expand_as(x)
+
+
+def get_attn(attn_type, channels, **kwards):
+    if attn_type == 'se':
+        module_cls = SEModule
+    elif attn_type == 'eca':
+        module_cls = ECAModule
+    else:
+        return None
+
+    if module_cls is not None:
+        return module_cls(channels, **kwards)
