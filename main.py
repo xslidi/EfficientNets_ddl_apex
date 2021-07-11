@@ -15,7 +15,6 @@ from models.effnet import EfficientNet
 from models.regnet import RegNet
 from models.resnet import resnet50
 from models.nfnet import NormFreeNet
-from models.nfnet_timm import nf_regnet_b0
 from runner import Runner
 from loader import get_loaders, get_loaders_dali
 
