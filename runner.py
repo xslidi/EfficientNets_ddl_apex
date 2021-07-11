@@ -205,6 +205,8 @@ class Runner():
                     if self.arg.amp:
                         with torch.cuda.amp.autocast():
                             out = self.net(input_)
+                    else:
+                        out = self.net(input_)
 
                 loss = self.loss(out, target_)
                 # out = F.softmax(out, dim=1)
